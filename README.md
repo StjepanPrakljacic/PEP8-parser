@@ -20,4 +20,5 @@ python program.py
 ## Contributing
 Contributions are welcome! If you find issues, have suggestions, or want to enhance the PEP 8 parser, feel free to submit pull requests.
 ## License
+This project is licensed under the [MIT License](LICENSE).
 ## Contact
