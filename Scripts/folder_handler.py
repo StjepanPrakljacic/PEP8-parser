@@ -40,9 +40,9 @@ class FolderHandler:
         for folder, sub_folders, file_names in os.walk(self.folder_path):
             for file in file_names:
                 original_path = os.path.join(folder, file)
-                if all([file.endswith(".py"), "_copy" not in file]):
+                if all([file.endswith(".py"), "-Copy" not in file]):
                     file = os.path.splitext(file)[0]
-                    file = f"{file}_copy.py"
+                    file = f"{file}-Copy.py"
                     copy_path = os.path.join(folder, file)
                     shutil.copy2(original_path, copy_path)
                     copied_files.append(copy_path)
