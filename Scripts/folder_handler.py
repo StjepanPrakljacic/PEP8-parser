@@ -1,7 +1,6 @@
 import os
 import shutil
 from .logging_handler import log_obj
-from .error_handler import FolderHandlerError
 
 class FolderHandler:
     """
@@ -31,8 +30,11 @@ class FolderHandler:
         # The folder context has been exited.
     """
     def __init__(self, folder_path):
-        self.folder_path = folder_path
-        self.success = False
+        if os.path.exists(folder_path):
+            self.folder_path = folder_path
+        else:
+            raise FileNotFoundError(f"Path not found: {folder_path}")
+
 
     def __enter__(self):
         log_obj.info(f"Entering folder: {self.folder_path}")
@@ -46,16 +48,11 @@ class FolderHandler:
                     copy_path = os.path.join(folder, file)
                     shutil.copy2(original_path, copy_path)
                     copied_files.append(copy_path)
-        self.success = bool(copied_files)
         return copied_files
 
+
     def __exit__(self, exc_type, exc_value, traceback):
-        if not self.success:
-            raise FolderHandlerError(
-                f"No .py files were found in the folder: {self.folder_path}"
-                )
-        else:
-            log_obj.info(f"Exiting folder: {self.folder_path}")
+        log_obj.info(f"Exiting folder: {self.folder_path}")
 
 
 
