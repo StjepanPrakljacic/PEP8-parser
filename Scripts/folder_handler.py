@@ -1,3 +1,16 @@
+# PyCode Style folder handler module
+
+# Description: A context manager for managing folders and performing actions
+#              related to PyCode style corrections.
+
+
+# Created by: Stjepan Prakljačić
+# License: MIT License, all rights reserved.
+# Repository: https://github.com/StjepanPrakljacic/PEP8-parser.git
+#
+# Version: 1.0.0
+###############################################################################
+
 import os
 import shutil
 from .logging_handler import log_obj
@@ -7,8 +20,7 @@ class FolderHandler:
     A class representing a context manager for managing a folder.
 
     Attributes:
-        folder_path (str): The path to the folder to be managed.
-        success (bool): Indicates whether the folder management was successful.
+        folder_path (str): The path to the folder to be managed..
 
     Methods:
         __init__(self, folder_path):
@@ -25,16 +37,14 @@ class FolderHandler:
             # Code within the managed folder context.
             # The 'folder_contents' variable holds a list of contents in the
               folder.
-            # The 'success' attribute indicates whether the folder management
-              was successful.
         # The folder context has been exited.
     """
+
     def __init__(self, folder_path):
         if os.path.exists(folder_path):
             self.folder_path = folder_path
         else:
             raise FileNotFoundError(f"Path not found: {folder_path}")
-
 
     def __enter__(self):
         log_obj.info(f"Entering folder: {self.folder_path}")
@@ -50,10 +60,5 @@ class FolderHandler:
                     copied_files.append(copy_path)
         return copied_files
 
-
     def __exit__(self, exc_type, exc_value, traceback):
         log_obj.info(f"Exiting folder: {self.folder_path}")
-
-
-
-

@@ -1,9 +1,22 @@
-# custom_logging.py
+# PyCode logging module
+
+# Description: A Python logging module with a custom ColoredFormatter
+#              that adds color to log messages based on log levels.
+#              It provides color-coded log messages for better visibility
+#              during debugging and analysis.
+
+# Created by: Stjepan Prakljačić
+# License: MIT License, all rights reserved.
+# Repository: https://github.com/StjepanPrakljacic/PEP8-parser.git
+#
+# Version: 1.0.0
+###############################################################################
+
 import logging.config
 from colorama import init, Fore, Style
 
-# Initialize colorama
 init(autoreset=True)
+
 
 class ColoredFormatter(logging.Formatter):
     """
@@ -53,6 +66,7 @@ class ColoredFormatter(logging.Formatter):
 logging.config.fileConfig('logging_config.ini', disable_existing_loggers=False)
 log_obj = logging.getLogger("projectLogger")
 for handler in log_obj.handlers:
-    handler.setFormatter(ColoredFormatter(
-        '[%(asctime)s] - %(levelname)s - %(message)s',
-        datefmt='%d-%m-%Y %H:%M:%S'))
+    handler.setFormatter(
+        ColoredFormatter('[%(asctime)s] - %(levelname)s - %(message)s',
+                         datefmt='%d-%m-%Y %H:%M:%S')
+        )
