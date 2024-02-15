@@ -49,7 +49,9 @@ def ask_user_open_file(file_path):
         user_input = input().lower()
 
         if user_input in ('y', 'n'):
-            return user_input
+            if user_input == 'y':
+                return True
+            return False
         else:
             print("Invalid input. Please enter 'y' or 'n'.")
 

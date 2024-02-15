@@ -83,7 +83,8 @@ class FileHandler():
             status = self.parse_pycodestyle_output(violations)
             if status:
                 callback_fix(self.file_path, file_content, violations)
-                status = False
+                #status = False
+
 
     def run_pycodestyle(self):
         """
@@ -91,6 +92,9 @@ class FileHandler():
         corrective actions to fix style violations.
         """
         log_obj.info(f"Running code style analysis on file: {self.file_path}")
+        time.sleep(1)
+        self.analyze(extraneous_whitespace_check,
+                     extraneous_whitespace_corrective_action)
         time.sleep(1)
         self.analyze(imports_position_check,
                      imports_position_corrective_action)
