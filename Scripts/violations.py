@@ -34,6 +34,13 @@ patterns = {
         "key": "Blank lines positioning",
         "expected": "{expected}",
         "received": "{received}"
+        },
+    "extraneous_whitespace": {
+        "value": "[[({] | []}),;:]",
+        "violation_type": ["E201", "E202", "E203"],
+        "key": ["whitespace after {}", "whitespace before {}"],
+        "expected": None,
+        "received": None
         }
 }
 
@@ -51,7 +58,7 @@ def parse_pattern(pattern):
 
 
 def calculate_blank_lines(file_content, line_number, expected_blank_lines):
-    pattern, violation_type, key, exp, rec = parse_pattern(
+    _, violation_type, key, exp, rec = parse_pattern(
         patterns["expected_blank_lines"]
         )
     blank_lines_count = 0
@@ -79,7 +86,14 @@ def calculate_blank_lines(file_content, line_number, expected_blank_lines):
 
 
 def imports_position_check(file_content):
-    pattern, violation_type, key, exp, rec = parse_pattern(
+    """
+    Check import position violations in the given file content.
+
+    Returns:
+        list: A list containing violations, where each violation is a
+        dictionary.
+    """
+    _, violation_type, key, _, _ = parse_pattern(
         patterns["imports_position"]
         )
     violations = list()
@@ -110,12 +124,19 @@ def imports_position_check(file_content):
 
     line_numbers = [v.get("line_number") for v in violations]
     if line_numbers == list(range(min(line_numbers), max(line_numbers) + 1)):
-        return None # All imports are at the top of the file
+        return None
     return violations
 
 
 def multiple_imports_check(file_content):
-    pattern, violation_type, key, exp, rec = parse_pattern(
+    """
+    Check multiple imports violations in the given file content.
+
+    Returns:
+        list: A list containing violations, where each violation is a
+        dictionary.
+    """
+    pattern, violation_type, key, _, _ = parse_pattern(
         patterns["multiple_imports"]
         )
     violations = list()
@@ -131,6 +152,13 @@ def multiple_imports_check(file_content):
 
 
 def expected_blank_lines_check(file_content):
+    """
+    Check expected blank lines violations in the given file content.
+
+    Returns:
+        list: A list containing violations, where each violation is a
+        dictionary.
+    """
     content = "".join(file_content)
     tree = ast.parse(content)
     classes_and_functions = list()
@@ -168,9 +196,51 @@ def expected_blank_lines_check(file_content):
     return output
 
 
+def extraneous_whitespace_check(file_content):
+    """
+    Check for extraneous whitespace in the given file content.
 
+    Returns:
+        list: A list containing violations, where each violation is a
+        dictionary.
+    """
+    pattern, violation_types, keys, _, _ = parse_pattern(
+        patterns["extraneous_whitespace"]
+    )
+    violations = list()
 
+    for line_number, line in enumerate(file_content, start=1):
+        for match in pattern.finditer(line):
+            whitespace_group = match.group()
+            whitespace_char = whitespace_group.strip()
+            whitespace_position = match.start()
 
+            if whitespace_group == whitespace_char + ' ' and \
+                    whitespace_char in '([{':
+                violations.append({
+                    "line_number": line_number,
+                    "violation_type": violation_types[0],
+                    "key": keys[0].format(whitespace_char),
+                    "at_position": whitespace_position + 1
+                })
+            if whitespace_group == ' ' + whitespace_char and \
+                    line[whitespace_position - 1] != ',':
+                if whitespace_char in '}])':
+                    violations.append({
+                        "line_number": line_number,
+                        "violation_type": violation_types[1],
+                        "key": keys[1].format(whitespace_char),
+                        "at_position": whitespace_position
+                    })
+                if whitespace_char in ',;:':
+                    violations.append({
+                        "line_number": line_number,
+                        "violation_type": violation_types[2],
+                        "key": keys[1].format(whitespace_char),
+                        "at_position": whitespace_position
+                    })
+
+    return violations if violations else None
 
 
 
