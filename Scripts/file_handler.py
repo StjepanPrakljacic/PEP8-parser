@@ -63,7 +63,7 @@ class FileHandler():
 
         read_from_file(self): Reads the content of the specified Python file.
 
-        analyze(self, callback_check, callback_fix): Analyzes the Python file 
+        analyze(self, callback_check, callback_fix): Analyzes the Python file
         for style violations using the specified check and fix callbacks.
 
         open(self): Opens the specified Python file in the default code editor.

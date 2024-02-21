@@ -1,4 +1,4 @@
-#### 	This is a test_script_1.py (TODO NE dirati tabove u komentarima)
+#### 	This is a test_script_1.py
 
 def add_10       (value):
     return value 	+    10 # \t
@@ -8,7 +8,7 @@ from math import sqrt, pow
 
 class Person:
     import time
-    def __init__	(   self,name,age =      18    ) -> None: # \t 
+    def __init__	(   self,name,age =      18    ) -> None: # \t
         self.name =     name
         self.age   =    age
     def get_name(self):
@@ -29,7 +29,7 @@ class ViolationDetector:
             print("Violation detected:", violation)
 
 def func_increment(i):
-    i=i+1 # missing_whitespace_around_operator
+    i=i+1 
 
 # Intentional violations for testing detection
 ham = [1, 2, 3]
@@ -43,13 +43,5 @@ violations_to_detect = [
 detector = ViolationDetector                     (   violations_to_detect    )
 detector.process_violations()
 value = add_10  (    10)
-print	(value,	10) # \t # whitespace_around_comma
+print	(value,	10)
 human = Person("Ian", 23   )
-
-
-#TODO
-# missing_whitespace_around_operator, !!
-# whitespace_around_comma
-# whitespace_before_inline_comment
-# compound_statements ??
-# maximum_line_length !!!!!!
