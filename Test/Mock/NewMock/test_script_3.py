@@ -18,7 +18,7 @@ def func(     a,	b):
         print("Sum")
     if a and b and (a +
                     b):
-        print("Help me this author was Id**t")            
+        print("None")            
     # This is a 	return statement
     return a -      b
 result = func	(4   , 6                      )
