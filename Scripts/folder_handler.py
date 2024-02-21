@@ -20,24 +20,22 @@ class FolderHandler:
     A class representing a context manager for managing a folder.
 
     Attributes:
-        folder_path (str): The path to the folder to be managed..
+        folder_path (str): The path to the folder to be managed.
 
     Methods:
-        __init__(self, folder_path):
-            Initialize the FolderHandler instance.
+        __init__(self, folder_path): Initialize the FolderHandler instance.
 
-        __enter__(self):
-            Enter the managed folder context.
+        __enter__(self): Enter the managed folder context.
 
-        __exit__(self, exc_type, exc_value, traceback):
-            Exit the managed folder context.
+        __exit__(self, exc_type, exc_value, traceback): Exit the managed folder
+                                                        context.
 
     Usage:
         with FolderHandler("/path/to/folder") as folder_contents:
             # Code within the managed folder context.
             # The 'folder_contents' variable holds a list of contents in the
               folder.
-        # The folder context has been exited.
+            # The folder context has been exited.
     """
 
     def __init__(self, folder_path):

@@ -17,7 +17,7 @@ class FolderHandlerError(Exception):
     A custom exception class for handling errors related to the FolderHandler.
 
     Attributes:
-        msg (str): The error message.
+        msg(str): The error message.
 
     Usage:
         try:

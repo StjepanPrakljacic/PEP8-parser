@@ -41,8 +41,7 @@ EXECUTION_LIST = [[trailing_whitespace_check,
                   [trailing_whitespace_check,
                    trailing_whitespace_corrective_action],
                   [missing_newline_check,
-                   missing_newline_corrective_action],
-                  ]
+                   missing_newline_corrective_action],]
 
 
 class FileHandler():
@@ -50,28 +49,24 @@ class FileHandler():
     A class representing a handler for managing Python files.
 
     Attributes:
-        file_path (str): The path to the Python file to be handled.
+        file_path(str): The path to the Python file to be handled.
 
     Methods:
-        __init__(self, file_path):
-            Initializes the FileHandler instance.
+        __init__(self, file_path): Initializes the FileHandler instance.
 
-        run_pycodestyle(self):
-            Runs code style analysis on the specified Python file and applies
-            corrective actions to fix style violations.
+        run_pycodestyle(self): Runs code style analysis on the specified
+                               Python file and applies corrective actions to
+                               fix style violations.
 
-        parse_pycodestyle_output(self, output):
-            Parses the Pycodestyle output to extract style violations.
+        parse_pycodestyle_output(self, output): Parses the Pycodestyle output
+                                                to extract style violations.
 
-        read_from_file(self):
-            Reads the content of the specified Python file.
+        read_from_file(self): Reads the content of the specified Python file.
 
-        analyze(self, callback_check, callback_fix):
-            Analyzes the Python file for style violations using the specified
-            check and fix callbacks.
+        analyze(self, callback_check, callback_fix): Analyzes the Python file 
+        for style violations using the specified check and fix callbacks.
 
-        open(self):
-            Opens the specified Python file in the default code editor.
+        open(self): Opens the specified Python file in the default code editor.
 
     Usage:
         file_handler = FileHandler("/path/to/file.py")
@@ -103,7 +98,18 @@ class FileHandler():
             callback_fix (function): The function to fix style violations.
         """
         status = True
+        safety_step_count = 0
         while status:
+            safety_step_count += 1
+            if safety_step_count >= 10:
+                log_obj.error("Code style analysis failed on: " \
+                    f"{callback_fix.__name__}. Number of safety steps: " \
+                    f"{safety_step_count}")
+
+                log_obj.debug("The code style analysis failed, and the fix " \
+                              "function couldn't fix some violations." \
+                              "This may be due to unpredictable behavior.")
+                break
             file_content = self.read_from_file()
             violations = callback_check(file_content)
             status = self.parse_pycodestyle_output(violations)
@@ -139,8 +145,7 @@ class FileHandler():
             try:
                 if not isinstance(output, list):
                     raise TypeError(
-                        f"Expected a list as the output, {type(output)}"
-                    )
+                        f"Expected a list as the output, {type(output)}")
                 for violation in output:
                     log_obj.warning(f"Violation detected: {violation}")
                 return True
