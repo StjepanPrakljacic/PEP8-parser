@@ -26,3 +26,23 @@ import os
 import xml, json
 def func2():
     pass
+
+class ViolationDetector:
+    def __init__(self, violations,type                  =              'violation', code        = "Active"):    
+        self.violations = violations
+    def process_violations(self):
+        for violation in self.violations:
+            print("Violation detected:", violation)
+
+def func_increment(i):
+    i=i+1 
+
+ham = [1, 2, 3]
+violations_to_detect = [
+    (  ham[1],{"eggs": 2}),
+    (ham[  1], {  "eggs": 2}),
+    (ham[1], {  "eggs": 2}),
+    (  ham[  1  ], {  "eggs": 2}  ),
+    ]
+
+detector = ViolationDetector  (   violations_to_detect    )

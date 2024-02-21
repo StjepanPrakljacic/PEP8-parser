@@ -12,9 +12,6 @@
 
 import re
 import ast
-import tokenize
-from io import BytesIO
-import keyword
 
 patterns = {
     "inline_comment": {
@@ -72,12 +69,10 @@ patterns = {
         },
 }
 
-BINARY_OPERATORS = frozenset(['**=', '*=', '+=', '-=', '!=', '<>', '%=', '^=',
-                              '&=', '|=', '==', '/=', '//=', '<=', '>=', '<<=',
-                              '>>=', '%',  '^',  '&',  '|',  '=',  '/',  '//',
-                              '<',  '>',  '<<'])
-UNARY_OPERATORS = frozenset(['>>', '**', '*', '+', '-'])
-OPERATORS = BINARY_OPERATORS | UNARY_OPERATORS
+OPERATORS = ['**=', '*=', '+=', '-=', '!=', '<>', '%=', '^=', '&=', '|=', '==',
+             '/=', '//=', '<=', '>=', '<<=', '>>=', '%',  '^', '&', '|', '=',
+             '/', '//', '<',  '>',  '<<', '>>', '**', '*', '+', '-']
+
 
 #############################################################
 #                     Helping functions                     #
@@ -89,7 +84,7 @@ def parse_pattern(pattern):
     Parse the pattern dictionary and extract relevant information.
 
     Args:
-        pattern (dict): A dictionary containing pattern information.
+        pattern(dict): A dictionary containing pattern information.
 
     Returns:
         tuple: A tuple containing the compiled pattern, violation type, and
@@ -114,10 +109,10 @@ def calculate_blank_lines(file_content, line_number, expected_blank_lines):
     Calculate and verify the number of blank lines above a specified line.
 
     Args:
-        file_content (list): List of strings representing the content of the
-                             file.
-        line_number (int): The line number to check for blank lines.
-        expected_blank_lines (int): The expected number of blank lines.
+        file_content(list): List of strings representing the content of the
+                            file.
+        line_number(int): The line number to check for blank lines.
+        expected_blank_lines(int): The expected number of blank lines.
 
     Returns:
         dict or None: If the calculated blank lines differ from the expected
@@ -128,20 +123,67 @@ def calculate_blank_lines(file_content, line_number, expected_blank_lines):
     blank_lines_count = 0
     current_line = line_number - 2
 
-    # Count blank lines until a non-blank line is encountered
     while current_line >= 0 and not file_content[current_line].strip():
         blank_lines_count += 1
         current_line -= 1
 
     if blank_lines_count != expected_blank_lines:
-        return {
-            "line_number": line_number,
-            "violation_type": pattern[1],
-            "key": pattern[2],
-            "expected": pattern[3].format(expected=expected_blank_lines),
-            "received": pattern[4].format(received=blank_lines_count),
-        }
+        return {"line_number": line_number,
+                "violation_type": pattern[1],
+                "key": pattern[2],
+                "expected": pattern[3].format(expected=expected_blank_lines),
+                "received": pattern[4].format(received=blank_lines_count),}
     return None
+
+
+def check_whitespace_after_operator(line, index):
+    """
+    Calculate and verify the number of whitespace characters after a specified
+    index in a line.
+
+    Args:
+        line(str): The line in which to check whitespace after the index.
+        index(int): The index to start checking for whitespace after.
+
+    Returns:
+        tuple: A tuple containing the calculated number of whitespace
+               characters after the index and the original index.
+    """
+    whitespace_after = 0
+    step = index + 1
+    while step < len(line) and line[step].isspace():
+        whitespace_after += 1
+        step += 1
+    return whitespace_after, index
+
+
+def check_whitespace_before_operator(line, index):
+    """
+    Calculate and verify the number of whitespace characters before a specified
+    index in a line.
+
+    Args:
+        line(str): The line in which to check whitespace before the index.
+        index(int): The index to start checking for whitespace before.
+
+    Returns:
+        tuple: A tuple containing the calculated number of whitespace
+               characters before the index and the updated index. If the index
+               reaches the beginning of the line, returns -1 indicating the
+               case for example:
+                                if (a + b
+                                    + c == value):
+                                    pass
+    """
+    whitespace_before = 0
+    step = index - 1
+    while step >= 0 and line[step].isspace():
+        whitespace_before += 1
+        step -= 1
+    if step == -1:
+        return -1, index
+    else:
+        return whitespace_before, step
 
 #############################################################
 #                 Violations check section                  #
@@ -153,8 +195,8 @@ def tabs_check(file_content):
     Check for tabs in the given file content.
 
     Args:
-        file_content (list): List of strings representing the content of the
-                             file.
+        file_content(list): List of strings representing the content of the
+                            file.
 
     Returns:
         list: A list containing violations, where each violation is a
@@ -178,13 +220,10 @@ def tabs_check(file_content):
         tab_indices = [match.start() for match in re.finditer(r'\t', line)]
 
         for column in tab_indices:
-            violations.append({
-                "line_number": line_number,
-                "violation_type": pattern[1],
-                "key": pattern[2],
-                "column": column
-            })
-
+            violations.append({"line_number": line_number,
+                               "violation_type": pattern[1],
+                               "key": pattern[2],
+                               "column": column})
     return violations if violations else None
 
 
@@ -192,8 +231,8 @@ def extraneous_whitespace_check(file_content):
     """
     Check for extraneous whitespace in the given file content.
     Args:
-        file_content (list): List of strings representing the content of the
-                             file.
+        file_content(list): List of strings representing the content of the
+                            file.
     Returns:
         list: A list containing violations, where each violation is a
               dictionary.
@@ -211,35 +250,33 @@ def extraneous_whitespace_check(file_content):
                 + ' ' and \
                 whitespace_char in '([{'):
                 violations.append({
-                    "line_number": line_number,
-                    "violation_type": pattern[1][0],
-                    "key": pattern[2][0].format(whitespace_char),
-                    "column": whitespace_position + 1
-                })
+                    "line_number": line_number, \
+                    "violation_type": pattern[1][0], \
+                    "key": pattern[2][0].format(whitespace_char), \
+                    "column": whitespace_position + 1})
 
             if (whitespace_group == ' ' \
                 + whitespace_char and \
                 line[whitespace_position - 1] != ','):
 
                 next_non_whitespace_index = whitespace_position
-                while (next_non_whitespace_index >= 0 and
+                while (next_non_whitespace_index >= 0 and \
                        line[next_non_whitespace_index].isspace()):
                     next_non_whitespace_index -= 1
 
                 if whitespace_char in '}])':
                     violations.append({
-                        "line_number": line_number,
-                        "violation_type": pattern[1][1],
-                        "key": pattern[2][1].format(whitespace_char),
-                        "column": next_non_whitespace_index + 1
-                    })
+                        "line_number": line_number, \
+                        "violation_type": pattern[1][1], \
+                        "key": pattern[2][1].format(whitespace_char), \
+                        "column": next_non_whitespace_index + 1})
+
                 if whitespace_char in ',;:':
                     violations.append({
-                        "line_number": line_number,
-                        "violation_type": pattern[1][2],
-                        "key": pattern[2][1].format(whitespace_char),
-                        "column": next_non_whitespace_index + 1
-                    })
+                        "line_number": line_number, \
+                        "violation_type": pattern[1][2], \
+                        "key": pattern[2][1].format(whitespace_char), \
+                        "column": next_non_whitespace_index + 1})
 
     return violations if violations else None
 
@@ -248,11 +285,11 @@ def missing_whitespace_check(file_content):
     """
     Check for missing whitespace in the given file content.
     Args:
-        file_content (list): List of strings representing the content of the
-                             file.
+        file_content(list): List of strings representing the content of the
+                            file.
     Returns:
         list: A list containing violations, where each violation is a
-        dictionary.
+              dictionary.
     """
     pattern = parse_pattern(patterns["missing_whitespace"])
     violations = list()
@@ -267,12 +304,11 @@ def missing_whitespace_check(file_content):
                     continue
                 if character == ',' and line[index + 1] == ')':
                     continue
-                violations.append({
-                            "line_number": line_number,
-                            "violation_type": pattern[1],
-                            "key": pattern[2].format(character),
-                            "column": index
-                        })
+                violations.append({"line_number": line_number, \
+                                   "violation_type": pattern[1], \
+                                   "key": pattern[2].format(character), \
+                                   "column": index})
+
     return violations if violations else None
 
 
@@ -280,11 +316,11 @@ def whitespace_before_parameters_check(file_content):
     """
     Check for whitespace before parameters.
     Args:
-        file_content (list): List of strings representing the content of the
-                             file.
+        file_content(list): List of strings representing the content of the
+                            file.
     Returns:
         list: A list containing violations, where each violation is a
-        dictionary.
+              dictionary.
     """
     pattern = parse_pattern(patterns["whitespace_before_param"])
     violations = list()
@@ -292,13 +328,11 @@ def whitespace_before_parameters_check(file_content):
         matches = re.finditer(pattern[0], line)
         for match in matches:
             violation_column = match.start(1) + 1
-            violations.append({
-                "line_number": line_number,
-                "violation_type": pattern[1],
-                "key": pattern[2],
-                "for_function": match.group(1),
-                "column": violation_column
-            })
+            violations.append({"line_number": line_number, \
+                               "violation_type": pattern[1], \
+                               "key": pattern[2], \
+                               "for_function": match.group(1), \
+                               "column": violation_column})
 
     return violations if violations else None
 
@@ -308,45 +342,33 @@ def whitespace_around_operator_check(file_content):
     Check for whitespace around operators in the given file content.
 
     Args:
-        file_content (list): List of strings representing the content of the file.
-        patterns (dict): A dictionary containing pattern information for whitespace
-                         around operators.
+        file_content(list): List of strings representing the content of the
+                            file.
     Returns:
         list or None: A list containing violations, where each violation is a
-        dictionary. If no violations are found, returns None.
+                      dictionary.
     """
     pattern = parse_pattern(patterns["whitespace_around_operator"])
     violations = list()
 
     for line_number, line in enumerate(file_content, start=1):
-        for character in line:
-            if character in OPERATORS:
-                index = line.index(character)
-                step_before = index - 1
-                whitespace_counter = 0
-                while(line[step_before].isspace()):
-                    step_before -= 1
-                    whitespace_counter += 1
-                if whitespace_counter > 1 and step_before > 1:
-                    violations.append({
-                        "line_number": line_number,
-                        "violation_type": pattern[1][0],
-                        "key": pattern[2][0],
-                        "column": step_before + 1,
-                    })
-                whitespace_counter = 0
-                step_after = index + 1
-                while(step_after < len(line.rstrip()) and
-                      line[step_after].isspace()):
-                    step_after += 1
-                    whitespace_counter += 1
-                if whitespace_counter > 1:
-                    violations.append({
-                        "line_number": line_number,
-                        "violation_type": pattern[1][1],
-                        "key": pattern[2][1],
-                        "column": index + 1,
-                    })
+        for operator in OPERATORS:
+            indices = [i for i, char in enumerate(line) if char == operator]
+            for index in indices:
+                wh_before = None
+                wh_after = None
+                wh_before, i = check_whitespace_before_operator(line, index)
+                if wh_before > 1:
+                    violations.append({"line_number": line_number, \
+                                       "violation_type": pattern[1][0], \
+                                       "key": pattern[2][0], \
+                                       "column": i + 1,})
+                wh_after, i = check_whitespace_after_operator(line, index)
+                if wh_after > 1:
+                    violations.append({"line_number": line_number, \
+                                       "violation_type": pattern[1][1], \
+                                       "key": pattern[2][1], \
+                                       "column": i + 1,})
 
     return violations if violations else None
 
@@ -356,14 +378,14 @@ def trailing_whitespace_check(file_content):
     Check for trailing whitespace violations in the given file content.
 
     Args:
-        file_content (list): List of strings representing the content of the
-                             file.
-        patterns (dict): A dictionary containing pattern information for
-                         trailing whitespace.
+        file_content(list): List of strings representing the content of the
+                            file.
+        patterns(dict): A dictionary containing pattern information for
+                        trailing whitespace.
 
     Returns:
         list or None: A list containing violations, where each violation is a
-        dictionary. If no violations are found, returns None.
+                      dictionary.
     """
     pattern = parse_pattern(patterns["trailing_whitespace"])
     violations = list()
@@ -373,19 +395,15 @@ def trailing_whitespace_check(file_content):
         stripped = line.rstrip()
         if line != stripped:
             if stripped:
-                violations.append({
-                    "line_number": line_number,
-                    "violation_type": pattern[1][0],
-                    "key": pattern[2][0],
-                    "column": len(stripped)
-                })
+                violations.append({"line_number": line_number, \
+                                   "violation_type": pattern[1][0], \
+                                   "key": pattern[2][0], \
+                                   "column": len(stripped)})
             else:
-                violations.append({
-                    "line_number": line_number,
-                    "violation_type": pattern[1][1],
-                    "key": pattern[2][1],
-                    "column": 0
-                })
+                violations.append({"line_number": line_number,  \
+                                   "violation_type": pattern[1][1],  \
+                                   "key": pattern[2][1],  \
+                                   "column": 0})
 
     return violations if violations else None
 
@@ -394,11 +412,11 @@ def imports_position_check(file_content):
     """
     Check import position violations in the given file content.
     Args:
-        file_content (list): List of strings representing the content of the
-                             file.
+        file_content(list): List of strings representing the content of the
+                            file.
     Returns:
         list: A list containing violations, where each violation is a
-        dictionary.
+              dictionary.
     """
     pattern = parse_pattern(patterns["imports_position"])
     violations = list()
@@ -410,16 +428,14 @@ def imports_position_check(file_content):
     for node in ast.walk(tree):
         if isinstance(node, (ast.Import, ast.ImportFrom)):
             imports_outside_functions_classes.append(
-                {"node": node,"line_number": node.lineno}
-                )
+                {"node": node,"line_number": node.lineno})
 
     for node in tree.body:
         if isinstance(node, (ast.FunctionDef, ast.ClassDef)):
             for inner_node in ast.walk(node):
                 if isinstance(inner_node, (ast.Import, ast.ImportFrom)):
                     imports_inside_functions_classes.append(
-                        {"node": inner_node, "line_number": inner_node.lineno}
-                        )
+                        {"node": inner_node, "line_number": inner_node.lineno})
     verdict = list()
     for node in imports_outside_functions_classes:
         if node not in imports_inside_functions_classes:
@@ -427,11 +443,10 @@ def imports_position_check(file_content):
 
     if verdict and verdict != list(range(1, verdict[-1] + 1)):
         for line_number in verdict:
-            violations.append({
-                "line_number": line_number,
-                "violation_type": pattern[1],
-                "key": pattern[2]
-            })
+            violations.append({"line_number": line_number, \
+                               "violation_type": pattern[1], \
+                               "key": pattern[2]})
+
     return violations if violations else None
 
 
@@ -439,11 +454,11 @@ def multiple_imports_check(file_content):
     """
     Check multiple imports violations in the given file content.
     Args:
-        file_content (list): List of strings representing the content of the
-                             file.
+        file_content(list): List of strings representing the content of the
+                            file.
     Returns:
         list: A list containing violations, where each violation is a
-        dictionary.
+              dictionary.
     """
     pattern = parse_pattern(patterns["multiple_imports"])
     violations = list()
@@ -451,8 +466,8 @@ def multiple_imports_check(file_content):
     for line_number, line in enumerate(file_content, start=1):
         match = re.match(pattern[0], line)
         if match:
-            violations.append({"line_number": line_number,
-                               "violation_type": pattern[1],
+            violations.append({"line_number": line_number, \
+                               "violation_type": pattern[1], \
                                "key": pattern[2]})
 
     return violations if violations else None
@@ -462,11 +477,11 @@ def expected_blank_lines_check(file_content):
     """
     Check expected blank lines violations in the given file content.
     Args:
-        file_content (list): List of strings representing the content of the
+        file_content(list): List of strings representing the content of the
                              file.
     Returns:
         list: A list containing violations, where each violation is a
-        dictionary.
+              dictionary.
     """
     content = "".join(file_content)
     tree = ast.parse(content)
@@ -510,22 +525,18 @@ def missing_newline_check(file_content):
     Check for missing newline at the end of the file content.
 
     Args:
-        file_content (list): List of strings representing the content of the
-                             file.
-        patterns (dict): A dictionary containing pattern information for
-                         missing newline.
+        file_content(list): List of strings representing the content of the
+                            file.
     Returns:
         list or None: A list containing violations, where each violation is a
-        dictionary. If no violations are found, returns None.
+                      dictionary.
     """
     pattern = parse_pattern(patterns["missing_newline"])
     violations = list()
     if not file_content[-1].endswith('\n'):
-        violations.append({
-            "line_number": len(file_content),
-            "violation_type": pattern[1],
-            "key": pattern[2],
-            "column": len(file_content[-1]) + 1,
-        })
+        violations.append({"line_number": len(file_content), \
+                           "violation_type": pattern[1], \
+                           "key": pattern[2], \
+                           "column": len(file_content[-1]) + 1,})
 
     return violations if violations else None

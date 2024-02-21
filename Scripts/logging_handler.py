@@ -25,11 +25,11 @@ class ColoredFormatter(logging.Formatter):
 
     Class Attributes:
         COLORS (dict): Mapping between log levels and ANSI escape codes for
-        color and brightness.
+                       color and brightness.
 
     Methods:
-        format(self, record):
-            Override the format method to customize log record formatting.
+        format(self, record): Override the format method to customize log
+                              record formatting.
 
     Usage:
         # Initialize the ColoredFormatter
@@ -48,13 +48,11 @@ class ColoredFormatter(logging.Formatter):
         logger.error("Error message")
         logger.critical("Critical message")
     """
-    COLORS = {
-        'DEBUG': Fore.CYAN + Style.BRIGHT,
-        'INFO': Fore.GREEN + Style.BRIGHT,
-        'WARNING': Fore.YELLOW + Style.BRIGHT,
-        'ERROR': Fore.RED + Style.BRIGHT,
-        'CRITICAL': Fore.RED + Style.BRIGHT,
-    }
+    COLORS = {'DEBUG': Fore.CYAN + Style.BRIGHT,
+              'INFO': Fore.GREEN + Style.BRIGHT,
+              'WARNING': Fore.YELLOW + Style.BRIGHT,
+              'ERROR': Fore.RED + Style.BRIGHT,
+              'CRITICAL': Fore.RED + Style.BRIGHT,}
 
     def format(self, record):
         levelname = record.levelname
@@ -67,6 +65,5 @@ logging.config.fileConfig('logging_config.ini', disable_existing_loggers=False)
 log_obj = logging.getLogger("projectLogger")
 for handler in log_obj.handlers:
     handler.setFormatter(
-        ColoredFormatter('[%(asctime)s] - %(levelname)s - %(message)s',
-                         datefmt='%d-%m-%Y %H:%M:%S')
-        )
+        ColoredFormatter('[%(asctime)s] - %(levelname)s - %(message)s', \
+                         datefmt='%d-%m-%Y %H:%M:%S'))
