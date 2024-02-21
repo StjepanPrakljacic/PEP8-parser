@@ -28,3 +28,10 @@ class FolderHandlerError(Exception):
 
     def __init__(self, msg="Retreaving python files error."):
         super().__init__(msg)
+
+
+class CodeStyleAnalysisError(Exception):
+    """
+    Custom exception class for handling code style analysis errors.
+    """
+    pass
