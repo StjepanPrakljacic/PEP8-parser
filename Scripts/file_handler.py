@@ -12,11 +12,37 @@
 ###############################################################################
 
 import sys
+import os
 import subprocess
 import time
 from .logging_handler import log_obj
 from .violations import *
 from .corrective_actions import *
+from .error_handler import *
+
+EXECUTION_LIST = [[trailing_whitespace_check,
+                   trailing_whitespace_corrective_action],
+                  [tabs_check,
+                   tabs_corrective_action],
+                  [extraneous_whitespace_check,
+                   extraneous_whitespace_corrective_action],
+                  [missing_whitespace_check,
+                   missing_whitespace_corrective_action],
+                  [whitespace_before_parameters_check,
+                   whitespace_before_parameters_corrective_action],
+                  [whitespace_around_operator_check,
+                   whitespace_around_operator_corrective_action],
+                  [imports_position_check,
+                   imports_position_corrective_action],
+                  [multiple_imports_check,
+                   multiple_imports_corrective_action],
+                  [expected_blank_lines_check,
+                   blank_lines_corrective_action],
+                  [trailing_whitespace_check,
+                   trailing_whitespace_corrective_action],
+                  [missing_newline_check,
+                   missing_newline_corrective_action],
+                  ]
 
 
 class FileHandler():
@@ -83,27 +109,21 @@ class FileHandler():
             status = self.parse_pycodestyle_output(violations)
             if status:
                 callback_fix(self.file_path, file_content, violations)
-                #status = False
-
 
     def run_pycodestyle(self):
         """
         Runs code style analysis on the specified Python file and applies
         corrective actions to fix style violations.
         """
-        log_obj.info(f"Running code style analysis on file: {self.file_path}")
-        time.sleep(1)
-        self.analyze(extraneous_whitespace_check,
-                     extraneous_whitespace_corrective_action)
-        time.sleep(1)
-        self.analyze(imports_position_check,
-                     imports_position_corrective_action)
-        time.sleep(1)
-        self.analyze(multiple_imports_check,
-                     multiple_imports_corrective_action)
-        time.sleep(1)
-        self.analyze(expected_blank_lines_check,
-                     blank_lines_corrective_action)
+        file_name = os.path.basename(self.file_path)
+        log_obj.info(f"Running code style analysis on file: {file_name}")
+        for execution in EXECUTION_LIST:
+            try:
+                time.sleep(1)
+                self.analyze(execution[0], execution[1])
+            except Exception as e:
+                log_obj.error(e)
+                raise CodeStyleAnalysisError("Code style analysis failed.")
 
     def parse_pycodestyle_output(self, output):
         """
@@ -133,6 +153,7 @@ class FileHandler():
         """
         Opens the specified Python file in the default code editor.
         """
-        log_obj.info(f"Opening file in code editor: {self.file_path}")
+        file_name = os.path.basename(self.file_path)
+        log_obj.info(f"Opening {file_name} in code editor.")
         time.sleep(1)
-        subprocess.Popen(['code', self.file_path], shell=True)
+        subprocess.Popen(["code", self.file_path], shell=True)

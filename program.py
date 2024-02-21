@@ -15,7 +15,6 @@
 
 import os
 import sys
-import time
 from tkinter import Tk, filedialog
 from Scripts.folder_handler import FolderHandler
 from Scripts.logging_handler import log_obj
@@ -43,8 +42,9 @@ def ask_user_open_file(file_path):
     Returns:
         bool: True if the user chooses to open the file, False otherwise.
     """
+    file_name = os.path.basename(file_path)
     while True:
-        log_obj.info(f"Do you want to open '{file_path}' in a code editor?" \
+        log_obj.info(f"Do you want to open '{file_name}' in a code editor?" \
                      "(y/n): ")
         user_input = input().lower()
 
@@ -86,12 +86,8 @@ def main():
         sys.exit(1)
     except FolderHandlerError as folder_error:
         log_obj.error(folder_error)
-    except TypeError as type_error:
-        log_obj.error(type_error)
-        sys.exit(1)
     except Exception as e:
         log_obj.error(e)
-        sys.exit(1)
     return True
 
 
