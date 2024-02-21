@@ -38,7 +38,7 @@ def ask_user_open_file(file_path):
     """
     Asks the user if they would like to open the file in a code editor.
     Args:
-        file_path (str): The path of the file to be opened.
+        file_path(str): The path of the file to be opened.
     Returns:
         bool: True if the user chooses to open the file, False otherwise.
     """
