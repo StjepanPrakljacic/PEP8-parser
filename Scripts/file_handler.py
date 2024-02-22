@@ -20,18 +20,24 @@ from .violations import *
 from .corrective_actions import *
 from .error_handler import *
 
-EXECUTION_LIST = [[trailing_whitespace_check,
-                   trailing_whitespace_corrective_action],
-                  [tabs_check,
+EXECUTION_LIST = [[tabs_check,
                    tabs_corrective_action],
+                  [whitespace_before_inline_comment_check,
+                   whitespace_before_inline_comment_corrective_action],
                   [extraneous_whitespace_check,
                    extraneous_whitespace_corrective_action],
                   [missing_whitespace_check,
                    missing_whitespace_corrective_action],
                   [whitespace_before_parameters_check,
                    whitespace_before_parameters_corrective_action],
+                  [trailing_whitespace_check,
+                   trailing_whitespace_corrective_action],
                   [whitespace_around_operator_check,
                    whitespace_around_operator_corrective_action],
+                  [missing_whitespace_around_operator_check,
+                   missing_whitespace_around_operator_corrective_action],
+                  [whitespace_after_comma_check,
+                   whitespace_after_comma_corrective_action],
                   [imports_position_check,
                    imports_position_corrective_action],
                   [multiple_imports_check,
@@ -41,7 +47,7 @@ EXECUTION_LIST = [[trailing_whitespace_check,
                   [trailing_whitespace_check,
                    trailing_whitespace_corrective_action],
                   [missing_newline_check,
-                   missing_newline_corrective_action],]
+                   missing_newline_corrective_action]]
 
 
 class FileHandler():
@@ -83,7 +89,7 @@ class FileHandler():
         Returns:
             list: A list containing lines of the file content.
         """
-        with open(self.file_path, 'r') as f:
+        with open(self.file_path, "r") as f:
             file_content = f.readlines()
         return file_content
 
