@@ -8,7 +8,7 @@ from math import sqrt, pow
 
 class Person:
     import time
-    def __init__	(   self,name,age =      18    ) -> None: # \t
+    def __init__	(   self,name,age =      18    ): # \t
         self.name =     name
         self.age   =    age
     def get_name(self):
@@ -26,10 +26,10 @@ class ViolationDetector:
 
     def process_violations(self):
         for violation in self.violations:
-            print("Violation detected:", violation)
+            print("Violation detected:",      violation)
 
 def func_increment(i):
-    i=i+1 
+    return i+1
 
 # Intentional violations for testing detection
 ham = [1, 2, 3]

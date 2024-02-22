@@ -16,18 +16,20 @@ import ast
 patterns = {
     "inline_comment": {
         "value": "^\s*#",
-        "violation_type": 101,
-        "key": "Line contains mixed spaces and tabs",
+        "violation_type": [101, 261, 262],
+        "key": ["Line contains mixed spaces and tabs",
+                "At least two spaces before inline comment",
+                "Inline comment should start with '# '"]
         },
     "imports_position": {
         "value": "",
         "violation_type": 400,
-        "key": "Import positioning",
+        "key": "Import positioning"
         },
     "multiple_imports": {
         "value": "^\\s*import\\s+[^#]*,[^#]*$",
         "violation_type": 401,
-        "key": "Multiple imports on one line",
+        "key": "Multiple imports on one line"
         },
     "expected_blank_lines": {
         "value": "",
@@ -39,33 +41,35 @@ patterns = {
     "extraneous_whitespace": {
         "value": "[[({] | []}),;:]",
         "violation_type": [201, 202, 203],
-        "key": ["Whitespace after '{}'", "Whitespace before '{}'"],
+        "key": ["Whitespace after '{}'", "Whitespace before '{}'"]
         },
     "missing_whitespace": {
         "value": "",
         "violation_type": 231,
-        "key": "Missing whitespace after '{}'",
+        "key": "Missing whitespace after '{}'"
         },
     "whitespace_before_param": {
         "value": "(\w+)\s+\(",
         "violation_type": 211,
-        "key": "Whitespace before parametars",
+        "key": "Whitespace before parametars"
         },
     "whitespace_around_operator": {
         "value": "",
-        "violation_type": [221, 222],
+        "violation_type": [221, 222, 223, 224],
         "key": ["Multiple spaces before operator",
-                "Multiple spaces after operator"],
+                "Multiple spaces after operator",
+                "Missing space before operator",
+                "Missing space after operator"]
         },
     "missing_newline": {
         "value": "",
         "violation_type": 292,
-        "key": "No newline at end of file",
+        "key": "No newline at end of file"
         },
     "trailing_whitespace": {
         "value": "",
         "violation_type": [291, 293],
-        "key": ["Trailing whitespace", "Blank line contains whitespace"],
+        "key": ["Trailing whitespace", "Blank line contains whitespace"]
         },
 }
 
@@ -136,7 +140,7 @@ def calculate_blank_lines(file_content, line_number, expected_blank_lines):
     return None
 
 
-def check_whitespace_after_operator(line, index):
+def check_whitespace_after_position(line, index):
     """
     Calculate and verify the number of whitespace characters after a specified
     index in a line.
@@ -150,14 +154,17 @@ def check_whitespace_after_operator(line, index):
                characters after the index and the original index.
     """
     whitespace_after = 0
-    step = index + 1
+    if line[index + 1] in OPERATORS:
+        step = index + 2
+    else:
+        step = index + 1
     while step < len(line) and line[step].isspace():
         whitespace_after += 1
         step += 1
     return whitespace_after, index
 
 
-def check_whitespace_before_operator(line, index):
+def check_whitespace_before_position(line, index):
     """
     Calculate and verify the number of whitespace characters before a specified
     index in a line.
@@ -176,7 +183,10 @@ def check_whitespace_before_operator(line, index):
                                     pass
     """
     whitespace_before = 0
-    step = index - 1
+    if line[index - 1] in OPERATORS:
+        step = index - 2
+    else:
+        step = index - 1
     while step >= 0 and line[step].isspace():
         whitespace_before += 1
         step -= 1
@@ -221,8 +231,8 @@ def tabs_check(file_content):
 
         for column in tab_indices:
             violations.append({"line_number": line_number,
-                               "violation_type": pattern[1],
-                               "key": pattern[2],
+                               "violation_type": pattern[1][0],
+                               "key": pattern[2][0],
                                "column": column})
     return violations if violations else None
 
@@ -357,18 +367,82 @@ def whitespace_around_operator_check(file_content):
             for index in indices:
                 wh_before = None
                 wh_after = None
-                wh_before, i = check_whitespace_before_operator(line, index)
+                wh_before, pos = check_whitespace_before_position(line, index)
                 if wh_before > 1:
                     violations.append({"line_number": line_number, \
                                        "violation_type": pattern[1][0], \
                                        "key": pattern[2][0], \
-                                       "column": i + 1,})
-                wh_after, i = check_whitespace_after_operator(line, index)
+                                       "column": pos + 1})
+                wh_after, pos = check_whitespace_after_position(line, index)
                 if wh_after > 1:
                     violations.append({"line_number": line_number, \
                                        "violation_type": pattern[1][1], \
                                        "key": pattern[2][1], \
-                                       "column": i + 1,})
+                                       "column": pos + 1})
+
+    return violations if violations else None
+
+
+def missing_whitespace_around_operator_check(file_content):
+    """
+    Check for missing whitespace around operators in the given file content.
+
+    Args:
+        file_content(list): List of strings representing the content of the
+                            file.
+    Returns:
+        list or None: A list containing violations, where each violation is a
+                      dictionary.
+    """
+    pattern = parse_pattern(patterns["whitespace_around_operator"])
+    violations = list()
+
+    for line_number, line in enumerate(file_content, start=1):
+        for operator in OPERATORS:
+            indices = [i for i, char in enumerate(line) if char == operator]
+            for index in indices:
+                wh_before = None
+                wh_after = None
+                wh_before, pos = check_whitespace_before_position(line, index)
+                if wh_before == 0:
+                    violations.append({"line_number": line_number, \
+                                       "violation_type": pattern[1][2], \
+                                       "key": pattern[2][2], \
+                                       "column": pos})
+                wh_after, pos = check_whitespace_after_position(line, index)
+                if wh_after == 0:
+                    violations.append({"line_number": line_number, \
+                                       "violation_type": pattern[1][3], \
+                                       "key": pattern[2][3], \
+                                       "column": pos})
+
+    return violations if violations else None
+    
+
+def whitespace_after_comma_check(file_content):
+    """
+    Check for whitespace after comma in the given file content.
+
+    Args:
+        file_content(list): List of strings representing the content of the
+                            file.
+    Returns:
+        list or None: A list containing violations, where each violation is a
+                      dictionary.
+    """
+    violations = list()
+    
+    for line_number, line in enumerate(file_content, start=1):
+        indices = [i for i, char in enumerate(line) if char == ',']
+        if indices:
+            for index in indices:
+                counter = None
+                counter, pos = check_whitespace_after_position(line, index)
+                if counter > 1:
+                    violations.append({"line_number": line_number, \
+                                       "violation_type": 225, \
+                                       "key": "Multiple spaces after ','", \
+                                       "column": pos + 1})
 
     return violations if violations else None
 
@@ -518,6 +592,40 @@ def expected_blank_lines_check(file_content):
     output = sorted(violations, key=lambda x: x["line_number"]) \
         if violations else None
     return output
+
+
+def whitespace_before_inline_comment_check(file_content):
+    """
+    Check for whitespace before inline comment in the given file content.
+
+    Args:
+        file_content(list): List of strings representing the content of the
+                            file.
+
+    Returns:
+        list: A list containing violations, where each violation is a
+              dictionary.
+    """
+    pattern = parse_pattern(patterns["inline_comment"])
+    violations = list()
+    
+    for line_number, line in enumerate(file_content, start=1):
+       if "#" in line and line.strip("#").strip().strip("#") != "":
+           hash_index = line.find("#")
+           if (hash_index + 1 < len(line) 
+               and not line[hash_index + 1].isspace()):
+               violations.append({"line_number": line_number, \
+                                  "violation_type": pattern[1][2],
+                                  "key": pattern[2][2],
+                                  "column": hash_index})
+           if hash_index >= 2 and not (line[hash_index - 1].isspace() and 
+                                       line[hash_index - 2].isspace()):
+               violations.append({"line_number": line_number, \
+                                  "violation_type": pattern[1][1], \
+                                  "key": pattern[2][1], \
+                                  "column": hash_index})
+    
+    return violations if violations else None
 
 
 def missing_newline_check(file_content):

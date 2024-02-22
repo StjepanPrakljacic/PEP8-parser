@@ -11,6 +11,7 @@
 ###############################################################################
 
 import inspect
+import re
 from .logging_handler import log_obj
 
 #############################################################
@@ -44,7 +45,7 @@ def write_to_file(path, content):
     Returns:
         None
     """
-    with open(path, 'w') as f:
+    with open(path, "w") as f:
         f.writelines(content)
 
 
@@ -114,8 +115,8 @@ def tabs_corrective_action(path, content, violations):
         column = violation["column"]
         if prev_line_number == line_number:
             continue
-        lines[line_number - 1] = (lines[line_number - 1][:column]
-                                  + ' ' * 4
+        lines[line_number - 1] = (lines[line_number - 1][:column] \
+                                  + ' ' * 4 \
                                   + lines[line_number - 1][column + 1:])
         write_to_file(path, lines)
         prev_line_number = line_number
@@ -143,9 +144,8 @@ def extraneous_whitespace_corrective_action(path, content, violations):
         if prev_line_number == line_number:
             continue
         lines[line_number - 1], _ = remove_whitespace_and_count(
-            lines[line_number - 1],
-            column
-        )
+            lines[line_number - 1], \
+            column)
         write_to_file(path, lines)
         prev_line_number = line_number
 
@@ -172,7 +172,7 @@ def missing_whitespace_corrective_action(path, content, violations):
         if prev_line_number == line_number:
             continue
         lines[line_number - 1] = insert_whitespace(
-            lines[line_number - 1],
+            lines[line_number - 1], \
             column + 1)
         write_to_file(path, lines)
         prev_line_number = line_number
@@ -199,7 +199,7 @@ def whitespace_before_parameters_corrective_action(path, content, violations):
         column = violation["column"]
         index = column + len(function)
         lines[line_number - 1], count = remove_whitespace_and_count(
-            lines[line_number - 1],
+            lines[line_number - 1], \
             index - 1)
         write_to_file(path, lines)
 
@@ -226,7 +226,65 @@ def whitespace_around_operator_corrective_action(path, content, violations):
         if prev_line_number == line_number:
             continue
         lines[line_number - 1], _ = remove_whitespace_and_count(
-            lines[line_number - 1],
+            lines[line_number - 1], \
+            column + 1)
+        write_to_file(path, lines)
+        prev_line_number = line_number
+
+
+def missing_whitespace_around_operator_corrective_action(path, 
+                                                         content,
+                                                         violations):
+    """
+    Correct whitespace around operators violations in the given file content.
+
+    Args:
+        path(str): The path to the file being corrected.
+        content(list): The content of the file.
+        violations(list): A list of whitespace around operators violations,
+                          where each violation is represented as a dictionary.
+
+    Returns:
+        None
+    """
+    get_info_format(inspect.currentframe().f_code.co_name)
+    lines = content.copy()
+    prev_line_number = None
+    for violation in violations:
+        line_number = violation["line_number"]
+        column = violation["column"]
+        if prev_line_number == line_number:
+            continue
+        lines[line_number - 1] = insert_whitespace(
+            lines[line_number - 1], \
+            column + 1)
+        write_to_file(path, lines)
+        prev_line_number = line_number
+
+
+def whitespace_after_comma_corrective_action(path, content, violations):
+    """
+    Correct whitespace after comma violations in the given file content.
+
+    Args:
+        path(str): The path to the file being corrected.
+        content(list): The content of the file.
+        violations(list): A list of whitespace around operators violations,
+                          where each violation is represented as a dictionary.
+
+    Returns:
+        None
+    """
+    get_info_format(inspect.currentframe().f_code.co_name)
+    lines = content.copy()
+    prev_line_number = None
+    for violation in violations:
+        line_number = violation["line_number"]
+        column = violation["column"]
+        if prev_line_number == line_number:
+            continue
+        lines[line_number - 1], _ = remove_whitespace_and_count(
+            lines[line_number - 1], \
             column + 1)
         write_to_file(path, lines)
         prev_line_number = line_number
@@ -249,16 +307,16 @@ def trailing_whitespace_corrective_action(path, content, violations):
     lines = content.copy()
 
     for violation in violations:
-        line_number = violation['line_number']
+        line_number = violation["line_number"]
         violation_type = int(violation["violation_type"])
-        column = int(violation['column'])
+        column = int(violation["column"])
         if violation_type == 291:
             lines[line_number - 1], _ = remove_whitespace_and_count(
-                lines[line_number - 1],
+                lines[line_number - 1], \
                 column)
         elif violation_type == 293:
             lines[line_number - 1] = lines[line_number - 1].strip() + '\n'
-    with open(path, 'w') as f:
+    with open(path, "w") as f:
         f.writelines(lines)
 
 
@@ -281,7 +339,7 @@ def imports_position_corrective_action(path, content, violations):
     lines_to_remove = list()
 
     for violation in violations:
-        line_number = violation['line_number']
+        line_number = violation["line_number"]
         lines_to_remove.append(line_number)
         stored_lines.append(lines[line_number - 1].strip())
 
@@ -312,12 +370,12 @@ def multiple_imports_corrective_action(path, content, violations):
     offset = 0
 
     for violation in violations:
-        line_number = violation['line_number'] + offset
+        line_number = violation["line_number"] + offset
         import_line = lines[line_number - 1]
-        indentation = import_line.split('import')[0]
+        indentation = import_line.split("import")[0]
 
-        imports = [f"{indentation}import {module.strip()}" for module in
-                   import_line.replace('import ', '').split(',')]
+        imports = [f"{indentation}import {module.strip()}" for module in \
+                   import_line.replace("import ", '').split(',')]
         lines[line_number - 1] = imports[0] + '\n'
         for new_line in imports[1:]:
             line_number += 1
@@ -364,6 +422,44 @@ def blank_lines_corrective_action(path, content, violations):
                 blank_lines_diff += 1
 
     write_to_file(path, lines)
+
+
+def whitespace_before_inline_comment_corrective_action(path, \
+                                                       content, \
+                                                       violations):
+    """
+    Correct whitespaces before inline comment violations in the given file
+    content.
+
+    Args:
+        path(str): The path to the file being corrected.
+        content(list): The content of the file.
+        violations(list): A list of blank line violations, where each
+                          violation is represented as a dictionary.
+
+    Returns:
+        None
+    """
+    get_info_format(inspect.currentframe().f_code.co_name)
+    lines = content.copy()
+    prev_line_number = None
+    for violation in violations:
+        line_number = violation["line_number"]
+        violation_type = violation["violation_type"]
+        column = violation["column"]
+        if prev_line_number == line_number:
+            continue
+        if violation_type == 262:
+            lines[line_number - 1] = re.sub(r"#+\s*", \
+                                            r"# ", \
+                                            lines[line_number - 1])
+            write_to_file(path, lines)
+        if violation_type == 261:
+            lines[line_number - 1] = insert_whitespace(
+                lines[line_number - 1], \
+                column)
+            write_to_file(path, lines)
+        prev_line_number == line_number
 
 
 def missing_newline_corrective_action(path, content, violations):
