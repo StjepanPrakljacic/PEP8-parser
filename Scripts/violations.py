@@ -21,6 +21,13 @@ patterns = {
                 "At least two spaces before inline comment",
                 "Inline comment should start with '# '"]
         },
+    "indent": {
+        "value": "([ \t]*)",
+        "violation_type": [111, 112, 113],
+        "key": ["Indentation is not a multiple of four",
+                "Expected an indented block",
+                "Unexpected indentation"],
+        },
     "imports_position": {
         "value": "",
         "violation_type": 400,
@@ -230,10 +237,99 @@ def tabs_check(file_content):
         tab_indices = [match.start() for match in re.finditer(r'\t', line)]
 
         for column in tab_indices:
-            violations.append({"line_number": line_number,
-                               "violation_type": pattern[1][0],
-                               "key": pattern[2][0],
+            violations.append({"line_number": line_number, \
+                               "violation_type": pattern[1][0], \
+                               "key": pattern[2][0], \
                                "column": column})
+    return violations if violations else None
+
+
+def whitespace_before_inline_comment_check(file_content):
+    """
+    Check for whitespace before inline comment in the given file content.
+
+    Args:
+        file_content(list): List of strings representing the content of the
+                            file.
+
+    Returns:
+        list: A list containing violations, where each violation is a
+              dictionary.
+    """
+    pattern = parse_pattern(patterns["inline_comment"])
+    violations = list()
+
+    for line_number, line in enumerate(file_content, start=1):
+       if "#" in line and line.strip("#").strip().strip("#") != "":
+           hash_index = line.find("#")
+           if (hash_index + 1 < len(line)
+               and not line[hash_index + 1].isspace()):
+               violations.append({"line_number": line_number, \
+                                  "violation_type": pattern[1][2], \
+                                  "key": pattern[2][2], \
+                                  "column": hash_index})
+           if hash_index >= 2 and not (line[hash_index - 1].isspace() and \
+                                       line[hash_index - 2].isspace()):
+               violations.append({"line_number": line_number, \
+                                  "violation_type": pattern[1][1], \
+                                  "key": pattern[2][1], \
+                                  "column": hash_index})
+
+    return violations if violations else None
+
+
+def indentation_check(file_content):
+    """
+    Check for indentation violations in the given file content.
+    Args:
+        file_content (list): List of strings representing the content of the
+                             file.
+        patterns (dict): A dictionary containing pattern information for
+                         indentation.
+    Returns:
+        list or None: A list containing violations, where each violation is a
+        dictionary. If no violations are found, returns None.
+    """
+    violations = list()
+    pattern = parse_pattern(patterns["indent"])
+    indent_char = ' '
+
+     # Initialize previous_line and previous_line_indent_level
+    previous_line = ""
+    previous_line_indent_level = 0
+
+    for line_number, line in enumerate(file_content, start=1):
+        if not line.strip():
+            continue
+
+        indent_level = len(re.match(pattern[0], line).group(1))
+        line = line.rstrip()
+
+        if indent_char == ' ' and indent_level % 4:
+            violations.append({
+                "line_number": line_number, \
+                "violation_type": pattern[1][0], \
+                "key": pattern[2][0], \
+                "column": 0})
+
+        if line_number > 1:
+            indent_expect = previous_line.endswith(':')
+            if indent_expect and indent_level <= previous_line_indent_level:
+                violations.append({
+                    "line_number": line_number, \
+                    "violation_type": pattern[1][1], \
+                    "key": pattern[2][1], \
+                    "column": 0})
+
+            if indent_level > previous_line_indent_level and not indent_expect:
+                violations.append({
+                    "line_number": line_number, \
+                    "violation_type": pattern[1][2], \
+                    "key": pattern[2][2], \
+                    "column": 0})
+
+        previous_line = line
+        previous_line_indent_level = indent_level
     return violations if violations else None
 
 
@@ -417,7 +513,7 @@ def missing_whitespace_around_operator_check(file_content):
                                        "column": pos})
 
     return violations if violations else None
-    
+
 
 def whitespace_after_comma_check(file_content):
     """
@@ -431,7 +527,7 @@ def whitespace_after_comma_check(file_content):
                       dictionary.
     """
     violations = list()
-    
+
     for line_number, line in enumerate(file_content, start=1):
         indices = [i for i, char in enumerate(line) if char == ',']
         if indices:
@@ -594,37 +690,28 @@ def expected_blank_lines_check(file_content):
     return output
 
 
-def whitespace_before_inline_comment_check(file_content):
+def maximum_line_length_check(file_content, max_line_length=79):
     """
-    Check for whitespace before inline comment in the given file content.
+    Check maximum line length violations in the given file content.
 
     Args:
         file_content(list): List of strings representing the content of the
                             file.
+        max_line_length(int): Maximum allowed line length.
 
     Returns:
         list: A list containing violations, where each violation is a
               dictionary.
     """
-    pattern = parse_pattern(patterns["inline_comment"])
     violations = list()
-    
+
     for line_number, line in enumerate(file_content, start=1):
-       if "#" in line and line.strip("#").strip().strip("#") != "":
-           hash_index = line.find("#")
-           if (hash_index + 1 < len(line) 
-               and not line[hash_index + 1].isspace()):
-               violations.append({"line_number": line_number, \
-                                  "violation_type": pattern[1][2],
-                                  "key": pattern[2][2],
-                                  "column": hash_index})
-           if hash_index >= 2 and not (line[hash_index - 1].isspace() and 
-                                       line[hash_index - 2].isspace()):
-               violations.append({"line_number": line_number, \
-                                  "violation_type": pattern[1][1], \
-                                  "key": pattern[2][1], \
-                                  "column": hash_index})
-    
+        if len(line) > max_line_length:
+            violations.append({"line_number": line_number, \
+                               "violation_type": 501, \
+                               "key": "Exceeds maximum line length", \
+                               "column": 0})
+
     return violations if violations else None
 
 
@@ -645,6 +732,6 @@ def missing_newline_check(file_content):
         violations.append({"line_number": len(file_content), \
                            "violation_type": pattern[1], \
                            "key": pattern[2], \
-                           "column": len(file_content[-1]) + 1,})
+                           "column": len(file_content[-1]) + 1})
 
     return violations if violations else None

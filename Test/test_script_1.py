@@ -8,14 +8,14 @@ from math import sqrt, pow
 
 class Person:
     import time
-    def __init__	(   self,name,age =      18    ): # \t
+    def __init__	(   self,name,age =      18    ):
         self.name =     name
         self.age   =    age
     def get_name(self):
         return self.name
 import json
 class Animal:
-    def __init__  (self,species     ,age        = 1	): # \t
+    def __init__  (self,species     ,age        = 1	):
         pass
 
 # New class for detecting violations
