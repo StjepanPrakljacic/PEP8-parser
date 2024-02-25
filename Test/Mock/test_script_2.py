@@ -1,25 +1,48 @@
-import os, sys
-import datetime
-import json, random    , math
-from math import pow, sqrt
+#### This is a test_script_2.py
+def multiply_by_5(        value      ):
+    return value        * 5
 
-def example1():
-    ####This is a long comment. This should be wrapped to fit within 72 characters.
-    some_tuple=(   1,2, 3,'a'  );
-    some_variable={'long':'Long code lines should be wrapped within 79 characters.',
-    'other':[math.pi, 100,200,300,9876543210,'This is a long string that goes on'],
-    'more':{'inner':'This whole logical line should be wrapped.',some_tuple:[1,
-    20,300,40000,500000000,60000000000000000]}}
-    return (some_tuple, some_variable)
-def example2(): return {'has_key() is deprecated':True}.has_key({'f':2}.has_key(''));
-class Example3(   object ):
-    def __init__    ( self, bar ):
-     #Comments should have a space after the hash.
-     if bar : bar +=1;  bar=bar* bar   ; return bar
-     else:
-                    some_string = """
-                       Indentation in multiline strings should not be touched.
-Only actual code should be reindented.
-"""
-                    return (sys.path, some_string)
+import os
+import sys
+from datetime import datetime
+class Book:
+    import time
+    def __init__(self   , title,    author="Unknown"):
+        self.title    =       title
+        self.author                       = author
 
+    def get_info(self):
+        return f"{     self.title} by {self.author}"
+
+import json
+
+class Vehicle:
+    def __init__(self,    make,  model    , year=        2022        ):
+        pass
+# New class for detecting violations
+class ViolationChecker:
+    def __init__(self, violations):
+        self.violations = violations
+    def check_violations(self):
+        for violation in self.violations:
+            print("Violation found:", violation)
+def calculate_square(x   ):
+    return x     *    2
+
+# Intentional violations for testing detection
+numbers = [1,  2,     3]
+violations_to_check = [
+    (numbers[1  ], {  "apple": 2}),
+    (  numbers[1], {"apple": 2   }),
+    (                    numbers[  1 ], {   "apple": 2}             ),
+    (numbers[    1   ], {"apple": 2}),
+]
+
+checker = ViolationChecker(violations_to_check)
+checker.check_violations()
+result = multiply_by_5(4    )
+print(result, 4)
+book = Book(    "The Great Gatsby", "F. Scott Fitzgerald")
+print(book.get_info())
+current_time = datetime.now()
+print("Current time:", current_time)

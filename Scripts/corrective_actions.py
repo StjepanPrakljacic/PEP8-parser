@@ -10,6 +10,8 @@
 # Version: 1.0.0
 ###############################################################################
 
+import ast
+import textwrap
 import inspect
 import re
 from .logging_handler import log_obj
@@ -68,8 +70,8 @@ def remove_whitespace_and_count(s, start_index):
         end_index += 1
 
     modified_line = (
-        s[:start_index]
-        + s[start_index:end_index].replace(" ", "")
+        s[:start_index] \
+        + s[start_index:end_index].replace(" ", "") \
         + s[end_index:])
 
     return modified_line, count
@@ -87,6 +89,78 @@ def insert_whitespace(line, position):
         str: The line with whitespace inserted at the specified position.
     """
     return line[:position] + ' ' + line[position:]
+
+
+def is_function_definition(line):
+    """
+    Check if the line represents a function definition.
+
+    Args:
+        line(str): The line to check.
+
+    Returns:
+        bool: True if the line is a function definition, False otherwise.
+    """
+    function_definition_pattern = re.compile(r"^\s*def\s+[a-zA-Z_]\w*\s*\(")
+
+    return bool(function_definition_pattern.match(line))
+
+
+def expected_indent_correction(line):
+    """
+    Adjusts the indentation of the given line to the nearest multiple of four.
+
+    Args:
+        line(str): The line with a type 111 violation.
+
+    Returns:
+        str: The line with adjusted indentation.
+    """
+    current_indent = len(line) - len(line.lstrip())
+    if current_indent % 4 != 0:
+        adjusted_indent = current_indent + (4 - current_indent % 4)
+        return " " * adjusted_indent + line.lstrip()
+
+    return line
+
+
+def add_expected_indent(previous_line):
+    """
+    Calculate the expected indentation for the next line based on the previous
+    line.
+
+    Args:
+        previous_line(str): The previous line to analyze.
+
+    Returns:
+        str: The expected indentation.
+    """
+    previous_indent = len(previous_line) - len(previous_line.lstrip())
+    if previous_indent % 4 == 0:
+        expected_indent = " " * (previous_indent + 4)
+    else:
+        expected_indent = previous_line[:previous_indent]
+
+    return expected_indent
+
+
+def adjust_expected_indent(previous_line):
+    """
+    Calculate the expected indentation for the next line based on the previous
+    line.
+
+    Args:
+        previous_line(str): The previous line to analyze.
+
+    Returns:
+        str: The expected indentation.
+    """
+    previous_indent = len(previous_line) - len(previous_line.lstrip())
+    if previous_indent % 4 == 0:
+        expected_indent = " " * previous_indent
+    else:
+        expected_indent = " " * 4
+    return expected_indent
 
 
 #############################################################
@@ -118,6 +192,83 @@ def tabs_corrective_action(path, content, violations):
         lines[line_number - 1] = (lines[line_number - 1][:column] \
                                   + ' ' * 4 \
                                   + lines[line_number - 1][column + 1:])
+        write_to_file(path, lines)
+        prev_line_number = line_number
+
+
+def whitespace_before_inline_comment_corrective_action(path, \
+                                                       content, \
+                                                       violations):
+    """
+    Correct whitespaces before inline comment violations in the given file
+    content.
+
+    Args:
+        path(str): The path to the file being corrected.
+        content(list): The content of the file.
+        violations(list): A list of blank line violations, where each
+                          violation is represented as a dictionary.
+
+    Returns:
+        None
+    """
+    get_info_format(inspect.currentframe().f_code.co_name)
+    lines = content.copy()
+    prev_line_number = None
+    for violation in violations:
+        line_number = violation["line_number"]
+        violation_type = violation["violation_type"]
+        column = violation["column"]
+        if prev_line_number == line_number:
+            continue
+        if violation_type == 262:
+            lines[line_number - 1] = re.sub(r"#+\s*", \
+                                            r"# ", \
+                                            lines[line_number - 1])
+        if violation_type == 261:
+            lines[line_number - 1] = insert_whitespace(
+                lines[line_number - 1], \
+                column)
+        write_to_file(path, lines)
+        prev_line_number = line_number
+
+
+def indentation_corrective_action(path, content, violations):
+    """
+    Corrects indent violations in the given file content.
+
+    Args:
+        path(str): The path to the file being corrected.
+        content(list): The content of the file.
+        violations(list): A list of tab violations, where each violation is
+                          represented as a dictionary.
+
+    Returns:
+        None
+    """
+    get_info_format(inspect.currentframe().f_code.co_name)
+    lines = content.copy()
+    prev_line_number = None
+    for violation in violations:
+        line_number = violation["line_number"]
+        violation_type = violation["violation_type"]
+        if prev_line_number == line_number:
+            continue
+        if violation_type == 111:
+            if is_function_definition(lines[line_number - 2]):
+                lines[line_number - 1] = " " * 4 \
+                + lines[line_number - 1].lstrip()
+            else:
+                lines[line_number - 1] = expected_indent_correction( \
+                    lines[line_number - 1])
+        if violation_type == 112:
+            expected_indent = add_expected_indent(lines[line_number - 2])
+            lines[line_number - 1] = expected_indent \
+            + lines[line_number - 1].lstrip()
+        if violation_type == 113:
+            expected_indent = adjust_expected_indent(lines[line_number - 2])
+            lines[line_number - 1] = lines[line_number - 1].lstrip()
+            lines[line_number - 1] = expected_indent + lines[line_number - 1]
         write_to_file(path, lines)
         prev_line_number = line_number
 
@@ -232,8 +383,8 @@ def whitespace_around_operator_corrective_action(path, content, violations):
         prev_line_number = line_number
 
 
-def missing_whitespace_around_operator_corrective_action(path, 
-                                                         content,
+def missing_whitespace_around_operator_corrective_action(path, \
+                                                         content, \
                                                          violations):
     """
     Correct whitespace around operators violations in the given file content.
@@ -385,7 +536,7 @@ def multiple_imports_corrective_action(path, content, violations):
     write_to_file(path, lines)
 
 
-def blank_lines_corrective_action(path, content, violations):
+def blank_lines_corrective_action(path, content, violations, ):
     """
     Correct blank line violations in the given file content.
 
@@ -424,42 +575,22 @@ def blank_lines_corrective_action(path, content, violations):
     write_to_file(path, lines)
 
 
-def whitespace_before_inline_comment_corrective_action(path, \
-                                                       content, \
-                                                       violations):
+def maximum_line_length_corrective_action(path, content, violations):
     """
-    Correct whitespaces before inline comment violations in the given file
-    content.
+    Corrects line length violations in the given file content.
 
     Args:
-        path(str): The path to the file being corrected.
-        content(list): The content of the file.
-        violations(list): A list of blank line violations, where each
+        path (str): The path to the file being corrected.
+        content (list): The content of the file.
+        violations (list): A list of blank line violations, where each
                           violation is represented as a dictionary.
 
     Returns:
         None
     """
-    get_info_format(inspect.currentframe().f_code.co_name)
-    lines = content.copy()
-    prev_line_number = None
-    for violation in violations:
-        line_number = violation["line_number"]
-        violation_type = violation["violation_type"]
-        column = violation["column"]
-        if prev_line_number == line_number:
-            continue
-        if violation_type == 262:
-            lines[line_number - 1] = re.sub(r"#+\s*", \
-                                            r"# ", \
-                                            lines[line_number - 1])
-            write_to_file(path, lines)
-        if violation_type == 261:
-            lines[line_number - 1] = insert_whitespace(
-                lines[line_number - 1], \
-                column)
-            write_to_file(path, lines)
-        prev_line_number == line_number
+    # get_info_format(inspect.currentframe().f_code.co_name)
+    # lines = content.copy()
+    # max_line_length = 79
 
 
 def missing_newline_corrective_action(path, content, violations):
